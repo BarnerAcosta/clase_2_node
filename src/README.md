@@ -49,6 +49,7 @@ La función deleteProductById(id, res) busca el producto por su ID, valida que e
 Cada función recibe los datos necesarios (como el ID o el cuerpo de la petición) y el objeto res para enviar la respuesta al cliente. Además, se utilizan funciones de validación para asegurar que los datos sean correctos y que el producto exista antes de realizar cualquier operación. Finalmente, todas las funciones se exportan juntas como un objeto para ser utilizadas en el controlador.
 
 
+
 `ARCHIVO VALIDATION`
 En el archivo validation.js dentro de la carpeta product/validation se encuentran las funciones encargadas de validar los datos antes de realizar operaciones sobre los productos. Estas validaciones ayudan a evitar errores y a asegurar que las operaciones solo se realicen con datos correctos.
 
