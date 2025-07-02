@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// Modelo Brand (Marca)
+model Brand {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  country   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  // OneToMany: Una marca puede tener muchos productos
+  products  Product[]
+  
+  @@map("brands")
+}
+
+// Modelo Product (Producto)
+model Product {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  price       Float
+  stock       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // ManyToOne: Muchos productos pertenecen a una marca
+  brandId     Int
+  brand       Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  
+  // OneToOne: Un producto puede tener un detalle
+  detail      ProductDetail?
+  
+  // ManyToMany: Un producto puede estar en muchas categorías
+  categories  ProductCategory[]
+  
+  @@map("products")
+}
+
+// Modelo ProductDetail (Detalle de Producto) - Relación OneToOne
+model ProductDetail {
+  id          Int     @id @default(autoincrement())
+  warranty    String?
+  weight      Float?
+  dimensions  String?
+  material    String?
+  
+  // OneToOne: Un detalle pertenece a un producto
+  productId   Int     @unique
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@map("product_details")
+}
+
+// Modelo Category (Categoría)
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // ManyToMany: Una categoría puede tener muchos productos
+  products    ProductCategory[]
+  
+  @@map("categories")
+}
+
+// Tabla intermedia para la relación ManyToMany entre Product y Category
+model ProductCategory {
+  productId   Int
+  categoryId  Int
+  
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  @@id([productId, categoryId])
+  @@map("product_categories")
+}

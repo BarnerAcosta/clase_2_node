@@ -1,54 +1,127 @@
+import prisma from '../config/database.js';
 import { validateId, foundId, foundBrand } from './validation/validation.js';
 
-let brands = [];
-let id = 0;
-
-function createNewBrand(data, res) {
-    const new_brand = {
-        id: ++id,
-        ...data
-    };
-    brands.push(new_brand);
-    res.json({
-        message: 'New brand created successfully',
-        status: "200"
-    });
+// Crear nueva marca
+async function createNewBrand(data, res) {
+    try {
+        const new_brand = await prisma.brand.create({
+            data: {
+                name: data.name,
+                country: data.country || null
+            },
+            include: {
+                products: true
+            }
+        });
+        
+        res.status(201).json({
+            message: 'New brand created successfully',
+            status: "201",
+            data: new_brand
+        });
+    } catch (error) {
+        res.status(400).json({
+            message: 'Error creating brand',
+            error: error.message
+        });
+    }
 }
 
-function allBrands(res) {
-    res.json(brands);
+// Obtener todas las marcas
+async function allBrands(res) {
+    try {
+        const brands = await prisma.brand.findMany({
+            include: {
+                products: true
+            }
+        });
+        res.json(brands);
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error fetching brands',
+            error: error.message
+        });
+    }
 }
 
-function brandById(id, res) {
-    const isInt = +id;
-    validateId(isInt, res);
-    const brand = brands.find(brand => brand.id === isInt);
-    foundBrand(brand, res);
-    res.json(brand);
+// Obtener marca por ID
+async function brandById(id, res) {
+    try {
+        const isInt = +id;
+        validateId(isInt, res);
+        
+        const brand = await prisma.brand.findUnique({
+            where: { id: isInt },
+            include: {
+                products: true
+            }
+        });
+        
+        if (!brand) {
+            return res.status(404).json({
+                message: 'Brand not found'
+            });
+        }
+        
+        res.json(brand);
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error fetching brand',
+            error: error.message
+        });
+    }
 }
 
-function updateBrandById(id, body, res) {
-    const isInt = +id;
-    validateId(isInt, res);
-    const index = brands.findIndex(brand => brand.id === isInt);
-    foundId(index, res);
-    brands[index] = { ...brands[index], ...body };
-    res.json({
-        message: 'Brand updated successfully',
-        status: "200"
-    });
+// Actualizar marca por ID
+async function updateBrandById(id, body, res) {
+    try {
+        const isInt = +id;
+        validateId(isInt, res);
+        
+        const updatedBrand = await prisma.brand.update({
+            where: { id: isInt },
+            data: {
+                ...(body.name && { name: body.name }),
+                ...(body.country && { country: body.country })
+            },
+            include: {
+                products: true
+            }
+        });
+        
+        res.json({
+            message: 'Brand updated successfully',
+            status: "200",
+            data: updatedBrand
+        });
+    } catch (error) {
+        res.status(400).json({
+            message: 'Error updating brand',
+            error: error.message
+        });
+    }
 }
 
-function deleteBrandById(id, res) {
-    const isInt = +id;
-    validateId(isInt, res);
-    const index = brands.findIndex(brand => brand.id === isInt);
-    foundId(index, res);
-    brands.splice(index, 1);
-    res.json({
-        message: 'Brand deleted successfully',
-        status: "200"
-    });
+// Eliminar marca por ID
+async function deleteBrandById(id, res) {
+    try {
+        const isInt = +id;
+        validateId(isInt, res);
+        
+        await prisma.brand.delete({
+            where: { id: isInt }
+        });
+        
+        res.json({
+            message: 'Brand deleted successfully',
+            status: "200"
+        });
+    } catch (error) {
+        res.status(400).json({
+            message: 'Error deleting brand',
+            error: error.message
+        });
+    }
 }
 
 export default {

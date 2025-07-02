@@ -1,64 +1,159 @@
 
-import { validateId, foundId, foundProduct} from './validation/validation.js'; // Importar función de validación de cadenas
+import prisma from '../config/database.js';
+import { validateId, foundId, foundProduct } from './validation/validation.js';
 
-let products = []; // Array para almacenar productos en memoria (simulación de base de datos)
-let id = 0; // Variable para generar IDs únicos para los productos
-
-function createNewProduct(data, res) {
-    const new_product = {
-    id: ++id, // Asignar un ID único al nuevo producto
-    ...data // Asignar los datos del producto
-    };
-    products.push(new_product); // Agregar el nuevo producto al array  
-    res.json({
-        message: 'New procuct created successfully',
-        status: "200"
-    }); // Respuesta al cliente con el producto creado   
+// Crear nuevo producto
+async function createNewProduct(data, res) {
+    try {
+        const new_product = await prisma.product.create({
+            data: {
+                name: data.name,
+                description: data.description || null,
+                price: parseFloat(data.price),
+                stock: parseInt(data.stock) || 0,
+                brandId: parseInt(data.brandId)
+            },
+            include: {
+                brand: true,
+                detail: true,
+                categories: {
+                    include: {
+                        category: true
+                    }
+                }
+            }
+        });
+        
+        res.status(201).json({
+            message: 'New product created successfully',
+            status: "201",
+            data: new_product
+        });
+    } catch (error) {
+        res.status(400).json({
+            message: 'Error creating product',
+            error: error.message
+        });
+    }
 }
 
-
-function allProducts(res) {
-    res.json(products); // Respuesta al cliente con la lista de productos
+// Obtener todos los productos
+async function allProducts(res) {
+    try {
+        const products = await prisma.product.findMany({
+            include: {
+                brand: true,
+                detail: true,
+                categories: {
+                    include: {
+                        category: true
+                    }
+                }
+            }
+        });
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error fetching products',
+            error: error.message
+        });
+    }
 }
 
-
-function productById(id, res) {
-    const isInt =+id
-    validateId(isInt, res); // Validar que el ID sea un número
-    const product = products.find(product => product.id === isInt) // Buscar el producto por ID
-    foundProduct(product, res); // Validar que el producto exista
-    res.json(product); // Respuesta al cliente con el producto encontrado
+// Obtener producto por ID
+async function productById(id, res) {
+    try {
+        const isInt = +id;
+        validateId(isInt, res);
+        
+        const product = await prisma.product.findUnique({
+            where: { id: isInt },
+            include: {
+                brand: true,
+                detail: true,
+                categories: {
+                    include: {
+                        category: true
+                    }
+                }
+            }
+        });
+        
+        if (!product) {
+            return res.status(404).json({
+                message: 'Product not found'
+            });
+        }
+        
+        res.json(product);
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error fetching product',
+            error: error.message
+        });
+    }
 }
 
-
-function updateProductById(id, body, res) {
-    const isInt = +id; // Convertir el ID a un número
-    validateId(isInt, res);
-    const product = products.findIndex(product => product.id === isInt); // Buscar el índice del producto por ID
-    foundId(product, res); // Validar que el ID exista
-    products[product] = { ...products[product], ...body }; // Actualizar el producto con los nuevos datos
-    res.json({
-        message: 'New procuct updated successfully',
-        status: "200"
-    });
+// Actualizar producto por ID
+async function updateProductById(id, body, res) {
+    try {
+        const isInt = +id;
+        validateId(isInt, res);
+        
+        const updatedProduct = await prisma.product.update({
+            where: { id: isInt },
+            data: {
+                ...(body.name && { name: body.name }),
+                ...(body.description && { description: body.description }),
+                ...(body.price && { price: parseFloat(body.price) }),
+                ...(body.stock !== undefined && { stock: parseInt(body.stock) }),
+                ...(body.brandId && { brandId: parseInt(body.brandId) })
+            },
+            include: {
+                brand: true,
+                detail: true,
+                categories: {
+                    include: {
+                        category: true
+                    }
+                }
+            }
+        });
+        
+        res.json({
+            message: 'Product updated successfully',
+            status: "200",
+            data: updatedProduct
+        });
+    } catch (error) {
+        res.status(400).json({
+            message: 'Error updating product',
+            error: error.message
+        });
+    }
 }
 
-
-function deleteProductById(id, res){
-    const isInt = +id; // Convertir el ID a un número
-    validateId(isInt, res);
-    const product = products.findIndex(product => product.id === isInt);
-    foundId(product, res); 
-    products.splice(product, 1); // Elimina el producto del array
-    res.json({
-        message: 'Product deleted successfully',
-        status: "200"
-    });
+// Eliminar producto por ID
+async function deleteProductById(id, res) {
+    try {
+        const isInt = +id;
+        validateId(isInt, res);
+        
+        await prisma.product.delete({
+            where: { id: isInt }
+        });
+        
+        res.json({
+            message: 'Product deleted successfully',
+            status: "200"
+        });
+    } catch (error) {
+        res.status(400).json({
+            message: 'Error deleting product',
+            error: error.message
+        });
+    }
 }
-
-
-
-
 
 export {
     createNewProduct,
@@ -66,4 +161,4 @@ export {
     productById,
     updateProductById,
     deleteProductById
-}
+};

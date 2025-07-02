@@ -1,18 +1,28 @@
 {
   "name": "clase_2_node",
   "version": "2.0.0",
-  "description": "my firts app",
+  "description": "Node.js API with Prisma ORM",
   "main": "main.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start:dev": "node --watch ./src/server.js",
-    "start": "node ./src/server.js"
+    "start": "node ./src/server.js",
+    "db:migrate": "npx prisma migrate dev",
+    "db:generate": "npx prisma generate",
+    "db:seed": "node ./prisma/seed.js",
+    "db:reset": "npx prisma migrate reset && npm run db:seed",
+    "db:studio": "npx prisma studio"
+  },
+  "prisma": {
+    "seed": "node ./prisma/seed.js"
   },
   "author": "Barner",
   "license": "ISC",
   "dependencies": {
-    "express": "^5.1.0"
+    "@prisma/client": "^6.11.0",
+    "express": "^5.1.0",
+    "prisma": "^6.11.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
